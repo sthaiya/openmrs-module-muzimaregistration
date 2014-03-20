@@ -255,10 +255,9 @@ public class JsonEncounterQueueDataHandler implements QueueDataHandler {
     private void processEncounter(final Encounter encounter, final Object encounterObject) throws QueueProcessorException {
         String encounterPayload = encounterObject.toString();
 
-        String formString = JsonUtils.readAsString(encounterPayload, "$['encounter.form_id']");
-        int formId = NumberUtils.toInt(formString, -999);
-        Form form = Context.getFormService().getForm(formId);
-        encounter.setForm(form);
+        String formString = JsonUtils.readAsString(encounterPayload, "$['encounter.form_uuid']");
+        Form form = Context.getFormService().getFormByUuid(formString);
+        encounter.setForm(form != null ? form : Context.getFormService().getForm(-999));
 
         String encounterTypeString = JsonUtils.readAsString(encounterPayload, "$['encounter.type_id']");
         int encounterTypeId = NumberUtils.toInt(encounterTypeString, 1);
