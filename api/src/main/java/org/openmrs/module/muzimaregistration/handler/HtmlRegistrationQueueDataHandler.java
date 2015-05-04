@@ -86,7 +86,7 @@ public class HtmlRegistrationQueueDataHandler implements QueueDataHandler {
         if(!otherIdentifiers.isEmpty())
             patientIdentifiers.addAll(otherIdentifiers);
 
-        String locationIdString = JsonUtils.readAsString(payload, "$.encounter.['encounter.location_id']");
+        String locationIdString = JsonUtils.readAsString(payload, "$['encounter']['encounter.location_id']");
         int locationId=Integer.parseInt(locationIdString);
         setIdentifierTypeLocation(patientIdentifiers,locationId);
 
@@ -94,7 +94,7 @@ public class HtmlRegistrationQueueDataHandler implements QueueDataHandler {
     }
 
     private PatientIdentifier getPreferredPatientIdentifierFromPayload(){
-        String identifierValue = JsonUtils.readAsString(payload, "$.patient.['patient.medical_record_number']");
+        String identifierValue = JsonUtils.readAsString(payload, "$['patient']['patient.medical_record_number']");
         String identifierTypeName = "AMRS Universal ID";
 
         PatientIdentifier preferredPatientIdentifier = createPatientIdentifier(identifierTypeName, identifierValue);
@@ -104,8 +104,8 @@ public class HtmlRegistrationQueueDataHandler implements QueueDataHandler {
     }
     private List<PatientIdentifier> getOtherPatientIdentifiersFromPayload(){
         List<PatientIdentifier> otherIdentifiers = new ArrayList<PatientIdentifier>();
-        Object identifierTypeNameObject = JsonUtils.readAsObject(payload,"$.observation.other_identifier_type");
-        Object identifierValueObject =JsonUtils.readAsObject(payload,"$.observation.other_identifier_value");
+        Object identifierTypeNameObject = JsonUtils.readAsObject(payload,"$['observation']['other_identifier_type']");
+        Object identifierValueObject =JsonUtils.readAsObject(payload,"$['observation']['other_identifier_value']");
 
         if(identifierTypeNameObject instanceof JSONArray) {
             JSONArray identifierTypeName = (JSONArray)identifierTypeNameObject;
@@ -147,26 +147,26 @@ public class HtmlRegistrationQueueDataHandler implements QueueDataHandler {
     }
 
     private void setPatientBirthDateFromPayload(){
-        Date birthDate = JsonUtils.readAsDate(payload, "$.patient.['patient.birth_date']");
+        Date birthDate = JsonUtils.readAsDate(payload, "$['patient']['patient.birth_date']");
         unsavedPatient.setBirthdate(birthDate);
     }
 
     private void setPatientBirthDateEstimatedFromPayload(){
-        boolean birthdateEstimated = JsonUtils.readAsBoolean(payload, "$.patient.['patient.birthdate_estimated']");
+        boolean birthdateEstimated = JsonUtils.readAsBoolean(payload, "$['patient']['patient.birthdate_estimated']");
         unsavedPatient.setBirthdateEstimated(birthdateEstimated);
     }
 
     private void setPatientGenderFromPayload(){
-        String gender = JsonUtils.readAsString(payload, "$.patient.['patient.sex']");
+        String gender = JsonUtils.readAsString(payload, "$['patient']['patient.sex']");
         unsavedPatient.setGender(gender);
     }
 
     private void setPatientNameFromPayload(){
-        String givenName = JsonUtils.readAsString(payload, "$.patient.['patient.given_name']");
-        String familyName = JsonUtils.readAsString(payload, "$.patient.['patient.family_name']");
+        String givenName = JsonUtils.readAsString(payload, "$['patient']['patient.given_name']");
+        String familyName = JsonUtils.readAsString(payload, "$['patient']['patient.family_name']");
         String middleName="";
         try{
-            middleName= JsonUtils.readAsString(payload, "$.patient.['patient.middle_name']");
+            middleName= JsonUtils.readAsString(payload, "$['patient']['patient.middle_name']");
         }catch(Exception e){}
 
         PersonName personName = new PersonName();
@@ -199,7 +199,7 @@ public class HtmlRegistrationQueueDataHandler implements QueueDataHandler {
     }
 
     private String getPatientUuidFromPayload(){
-        return JsonUtils.readAsString(payload, "$.patient.['patient.uuid']");
+        return JsonUtils.readAsString(payload, "$['patient']['patient.uuid']");
     }
 
     private Patient findSimilarSavedPatient(){
