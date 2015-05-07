@@ -86,16 +86,16 @@ public class JsonEncounterQueueDataHandler implements QueueDataHandler {
         Patient unsavedPatient = new Patient();
         String patientPayload = patientObject.toString();
 
-        String uuid = JsonUtils.readAsString(patientPayload, "$.patient.['patient.uuid']");
+        String uuid = JsonUtils.readAsString(patientPayload, "$['patient']['patient.uuid']");
         unsavedPatient.setUuid(uuid);
 
         PatientService patientService = Context.getPatientService();
         LocationService locationService = Context.getLocationService();
         PatientIdentifierType defaultIdentifierType = patientService.getPatientIdentifierType(1);
 
-        String identifier = JsonUtils.readAsString(patientPayload, "$.patient.['patient.medical_record_number']");
-        String identifierTypeUuid = JsonUtils.readAsString(patientPayload, "$.patient.['patient.identifier_type']");
-        String locationUuid = JsonUtils.readAsString(patientPayload, "$.patient.['patient.identifier_location']");
+        String identifier = JsonUtils.readAsString(patientPayload, "$['patient']['patient.medical_record_number']");
+        String identifierTypeUuid = JsonUtils.readAsString(patientPayload, "$['patient']['patient.identifier_type']");
+        String locationUuid = JsonUtils.readAsString(patientPayload, "$['patient']['patient.identifier_location']");
 
         PatientIdentifier patientIdentifier = new PatientIdentifier();
         Location location = StringUtils.isNotBlank(locationUuid) ?
@@ -107,17 +107,17 @@ public class JsonEncounterQueueDataHandler implements QueueDataHandler {
         patientIdentifier.setIdentifier(identifier);
         unsavedPatient.addIdentifier(patientIdentifier);
 
-        Date birthdate = JsonUtils.readAsDate(patientPayload, "$.patient.['patient.birthdate']");
-        boolean birthdateEstimated = JsonUtils.readAsBoolean(patientPayload, "$.patient.['patient.birthdate_estimated']");
-        String gender = JsonUtils.readAsString(patientPayload, "$.patient.['patient.sex']");
+        Date birthdate = JsonUtils.readAsDate(patientPayload, "$['patient']['patient.birthdate']");
+        boolean birthdateEstimated = JsonUtils.readAsBoolean(patientPayload, "$['patient']['patient.birthdate_estimated']");
+        String gender = JsonUtils.readAsString(patientPayload, "$['patient']['patient.sex']");
 
         unsavedPatient.setBirthdate(birthdate);
         unsavedPatient.setBirthdateEstimated(birthdateEstimated);
         unsavedPatient.setGender(gender);
 
-        String givenName = JsonUtils.readAsString(patientPayload, "$.patient.['patient.given_name']");
-        String middleName = JsonUtils.readAsString(patientPayload, "$.patient.['patient.middle_name']");
-        String familyName = JsonUtils.readAsString(patientPayload, "$.patient.['patient.family_name']");
+        String givenName = JsonUtils.readAsString(patientPayload, "$['patient']['patient.given_name']");
+        String middleName = JsonUtils.readAsString(patientPayload, "$['patient']['patient.middle_name']");
+        String familyName = JsonUtils.readAsString(patientPayload, "$['patient']['patient.family_name']");
 
         PersonName personName = new PersonName();
         personName.setGivenName(givenName);
@@ -262,7 +262,7 @@ public class JsonEncounterQueueDataHandler implements QueueDataHandler {
     private void processEncounter(final Encounter encounter, final Object encounterObject) throws QueueProcessorException {
         String encounterPayload = encounterObject.toString();
 
-        String formUuid = JsonUtils.readAsString(encounterPayload, "$.encounter.['encounter.form_uuid']");
+        String formUuid = JsonUtils.readAsString(encounterPayload, "$['encounter']['encounter.form_uuid']");
         Form form = Context.getFormService().getFormByUuid(formUuid);
         if (form == null) {
             MuzimaFormService muzimaFormService = Context.getService(MuzimaFormService.class);
@@ -273,7 +273,7 @@ public class JsonEncounterQueueDataHandler implements QueueDataHandler {
                 encounter.setEncounterType(formDefinition.getEncounterType());
             } else {
                 log.info("Unable to find form using the uuid: " + formUuid + ". Setting the form field to null!");
-                String encounterTypeString = JsonUtils.readAsString(encounterPayload, "$.encounter.['encounter.type_id']");
+                String encounterTypeString = JsonUtils.readAsString(encounterPayload, "$['encounter']['encounter.type_id']");
                 int encounterTypeId = NumberUtils.toInt(encounterTypeString, -999);
                 EncounterType encounterType = Context.getEncounterService().getEncounterType(encounterTypeId);
                 if (encounterType == null) {
@@ -286,7 +286,7 @@ public class JsonEncounterQueueDataHandler implements QueueDataHandler {
             encounter.setEncounterType(form.getEncounterType());
         }
 
-        String providerString = JsonUtils.readAsString(encounterPayload, "$.encounter.['encounter.provider_id']");
+        String providerString = JsonUtils.readAsString(encounterPayload, "$['encounter']['encounter.provider_id']");
         User user = Context.getUserService().getUserByUsername(providerString);
         if (user == null) {
             throw new QueueProcessorException("Unable to find user using the id: " + providerString);
@@ -294,7 +294,7 @@ public class JsonEncounterQueueDataHandler implements QueueDataHandler {
         encounter.setCreator(user);
         encounter.setProvider(user);
 
-        String locationString = JsonUtils.readAsString(encounterPayload, "$.encounter.['encounter.location_id']");
+        String locationString = JsonUtils.readAsString(encounterPayload, "$['encounter']['encounter.location_id']");
         int locationId = NumberUtils.toInt(locationString, -999);
         Location location = Context.getLocationService().getLocation(locationId);
         if (location == null) {
@@ -302,7 +302,7 @@ public class JsonEncounterQueueDataHandler implements QueueDataHandler {
         }
         encounter.setLocation(location);
 
-        Date encounterDatetime = JsonUtils.readAsDate(encounterPayload, "$.encounter.['encounter.encounter_datetime']");
+        Date encounterDatetime = JsonUtils.readAsDate(encounterPayload, "$['encounter']['encounter.encounter_datetime']");
         encounter.setEncounterDatetime(encounterDatetime);
     }
 
