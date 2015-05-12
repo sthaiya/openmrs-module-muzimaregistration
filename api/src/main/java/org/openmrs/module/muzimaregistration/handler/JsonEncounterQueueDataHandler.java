@@ -16,7 +16,6 @@ package org.openmrs.module.muzimaregistration.handler;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.logging.Log;
@@ -64,25 +63,58 @@ public class JsonEncounterQueueDataHandler implements QueueDataHandler {
 
     private final Log log = LogFactory.getLog(JsonEncounterQueueDataHandler.class);
 
+    private QueueProcessorException queueProcessorException;
+
+    private Encounter encounter;
+
     @Override
-    public void process(final QueueData queueData) throws QueueProcessorException {
-        log.info("Processing encounter form data: " + queueData.getUuid());
-        Encounter encounter = new Encounter();
-        String payload = queueData.getPayload();
+    public boolean validate(QueueData queueData) {
+        try {
+            queueProcessorException = new QueueProcessorException();
+            log.info("Processing encounter form data: " + queueData.getUuid());
+            encounter = new Encounter();
+            String payload = queueData.getPayload();
 
-        //Object encounterObject = JsonUtils.readAsObject(queueData.getPayload(), "$['encounter']");
-        processEncounter(encounter, payload);
+            //Object encounterObject = JsonUtils.readAsObject(queueData.getPayload(), "$['encounter']");
+            processEncounter(encounter, payload);
 
-        //Object patientObject = JsonUtils.readAsObject(queueData.getPayload(), "$['patient']");
-        processPatient(encounter, payload);
+            //Object patientObject = JsonUtils.readAsObject(queueData.getPayload(), "$['patient']");
+            processPatient(encounter, payload);
 
-        Object obsObject = JsonUtils.readAsObject(queueData.getPayload(), "$['observation']");
-        processObs(encounter, null, payload);
+            //Object obsObject = JsonUtils.readAsObject(queueData.getPayload(), "$['observation']");
+            processObs(encounter, null, payload);
 
-        Context.getEncounterService().saveEncounter(encounter);
+            return true;
+
+        } catch (Exception e) {
+            queueProcessorException.addException(e);
+            return false;
+        }
+        finally {
+            if (queueProcessorException.anyExceptions()) {
+                throw queueProcessorException;
+            }
+        }
     }
 
-    private void processPatient(final Encounter encounter, final Object patientObject) throws QueueProcessorException {
+    @Override
+    public void process(final QueueData queueData) throws QueueProcessorException {
+
+        try {
+            if (validate(queueData)) {
+                Context.getEncounterService().saveEncounter(encounter);
+            }
+        } catch (Exception e) {
+            if(!e.getClass().equals(QueueProcessorException.class))
+                queueProcessorException.addException(e);
+        } finally {
+            if (queueProcessorException.anyExceptions()) {
+                throw queueProcessorException;
+            }
+        }
+    }
+
+    private void processPatient(final Encounter encounter, final Object patientObject)  {
         Patient unsavedPatient = new Patient();
         String patientPayload = patientObject.toString();
 
@@ -145,11 +177,12 @@ public class JsonEncounterQueueDataHandler implements QueueDataHandler {
         }
 
         if (candidatePatient == null) {
-            throw new QueueProcessorException("Unable to uniquely identify patient for this encounter form data. "
-                    + ToStringBuilder.reflectionToString(unsavedPatient));
+            queueProcessorException.addException(new Exception("Unable to uniquely identify patient for this encounter form data. "));
+                    //+ ToStringBuilder.reflectionToString(unsavedPatient)));
         }
-
+        else {
         encounter.setPatient(candidatePatient);
+        }
     }
 
     private Patient findPatient(final List<Patient> patients, final Patient unsavedPatient) {
@@ -182,7 +215,7 @@ public class JsonEncounterQueueDataHandler implements QueueDataHandler {
         return null;
     }
 
-    private void processObs(final Encounter encounter, final Obs parentObs, final Object obsObject) throws QueueProcessorException {
+    private void processObs(final Encounter encounter, final Obs parentObs, final Object obsObject)  {
         if (obsObject instanceof JSONObject) {
             JSONObject obsJsonObject = (JSONObject) obsObject;
             for (String conceptQuestion : obsJsonObject.keySet()) {
@@ -230,9 +263,10 @@ public class JsonEncounterQueueDataHandler implements QueueDataHandler {
             int valueCodedId = Integer.parseInt(valueCodedElements[0]);
             Concept valueCoded = Context.getConceptService().getConcept(valueCodedId);
             if (valueCoded == null) {
-                throw new QueueProcessorException("Unable to find concept for value coded with id: " + valueCodedId);
+                queueProcessorException.addException(new Exception("Unable to find concept for value coded with id: " + valueCodedId));
+            }else {
+                obs.setValueCoded(valueCoded);
             }
-            obs.setValueCoded(valueCoded);
         } else if (concept.getDatatype().isText()) {
             obs.setValueText(value);
         }
@@ -277,9 +311,10 @@ public class JsonEncounterQueueDataHandler implements QueueDataHandler {
                 int encounterTypeId = NumberUtils.toInt(encounterTypeString, -999);
                 EncounterType encounterType = Context.getEncounterService().getEncounterType(encounterTypeId);
                 if (encounterType == null) {
-                    throw new QueueProcessorException("Unable to find encounter type using the id: " + encounterTypeString);
+                    queueProcessorException.addException(new Exception("Unable to find encounter type using the id: " + encounterTypeString));
+                }else {
+                    encounter.setEncounterType(encounterType);
                 }
-                encounter.setEncounterType(encounterType);
             }
         } else {
             encounter.setForm(form);
@@ -289,18 +324,21 @@ public class JsonEncounterQueueDataHandler implements QueueDataHandler {
         String providerString = JsonUtils.readAsString(encounterPayload, "$['encounter']['encounter.provider_id']");
         User user = Context.getUserService().getUserByUsername(providerString);
         if (user == null) {
-            throw new QueueProcessorException("Unable to find user using the id: " + providerString);
+            queueProcessorException.addException(new Exception("Unable to find user using the id: " + providerString));
         }
-        encounter.setCreator(user);
-        encounter.setProvider(user);
+        else {
+            encounter.setCreator(user);
+            encounter.setProvider(user);
+        }
 
         String locationString = JsonUtils.readAsString(encounterPayload, "$['encounter']['encounter.location_id']");
         int locationId = NumberUtils.toInt(locationString, -999);
         Location location = Context.getLocationService().getLocation(locationId);
         if (location == null) {
-            throw new QueueProcessorException("Unable to find encounter location using the id: " + locationString);
+            queueProcessorException.addException(new Exception("Unable to find encounter location using the id: " + locationString));
+        }else {
+            encounter.setLocation(location);
         }
-        encounter.setLocation(location);
 
         Date encounterDatetime = JsonUtils.readAsDate(encounterPayload, "$['encounter']['encounter.encounter_datetime']");
         encounter.setEncounterDatetime(encounterDatetime);
