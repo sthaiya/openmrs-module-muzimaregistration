@@ -49,7 +49,9 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  */
@@ -81,8 +83,8 @@ public class JsonEncounterQueueDataHandler implements QueueDataHandler {
             //Object patientObject = JsonUtils.readAsObject(queueData.getPayload(), "$['patient']");
             processPatient(encounter, payload);
 
-            //Object obsObject = JsonUtils.readAsObject(queueData.getPayload(), "$['observation']");
-            processObs(encounter, null, payload);
+            Object obsObject = JsonUtils.readAsObject(queueData.getPayload(), "$['observation']");
+            processObs(encounter, null, obsObject);
 
             return true;
 
@@ -165,7 +167,9 @@ public class JsonEncounterQueueDataHandler implements QueueDataHandler {
                 String temporaryUuid = unsavedPatient.getUuid();
                 RegistrationDataService dataService = Context.getService(RegistrationDataService.class);
                 RegistrationData registrationData = dataService.getRegistrationDataByTemporaryUuid(temporaryUuid);
-                candidatePatient = Context.getPatientService().getPatientByUuid(registrationData.getAssignedUuid());
+                if(registrationData!=null) {
+                    candidatePatient = Context.getPatientService().getPatientByUuid(registrationData.getAssignedUuid());
+                }
             }
         } else if (!StringUtils.isBlank(patientIdentifier.getIdentifier())) {
             List<Patient> patients = Context.getPatientService().getPatients(patientIdentifier.getIdentifier());
@@ -225,15 +229,15 @@ public class JsonEncounterQueueDataHandler implements QueueDataHandler {
                 if (concept.isSet()) {
                     Obs obsGroup = new Obs();
                     obsGroup.setConcept(concept);
-                    processObsObject(encounter, obsGroup, obsJsonObject.get(conceptQuestion));
+                    Object childObsObject = new JSONObject((Map<String,?>)obsJsonObject.get(conceptQuestion));
+                    processObsObject(encounter, obsGroup, childObsObject);
                     if (parentObs != null) {
                         parentObs.addGroupMember(obsGroup);
                     }
                 } else {
                     Object valueObject = obsJsonObject.get(conceptQuestion);
-                    Object o = JsonUtils.readAsObject(valueObject.toString(), "$");
-                    if (o instanceof JSONArray) {
-                        JSONArray jsonArray = (JSONArray) o;
+                    if (valueObject instanceof JSONArray) {
+                        JSONArray jsonArray = (JSONArray) valueObject;
                         for (Object arrayElement : jsonArray) {
                             createObs(encounter, parentObs, concept, arrayElement);
                         }
@@ -276,17 +280,20 @@ public class JsonEncounterQueueDataHandler implements QueueDataHandler {
     }
 
     private void processObsObject(final Encounter encounter, final Obs parentObs, final Object childObsObject) {
-        Object o = JsonUtils.readAsObject(childObsObject.toString(), "$");
-        if (o instanceof JSONArray) {
-            JSONArray jsonArray = (JSONArray) o;
+        //Object o = JsonUtils.readAsObject(childObsObject.toString(), "$");
+        if (childObsObject instanceof JSONArray) {
+            JSONArray jsonArray = (JSONArray) childObsObject;
             for (Object arrayElement : jsonArray) {
                 Obs obsGroup = new Obs();
                 obsGroup.setConcept(parentObs.getConcept());
                 processObs(encounter, obsGroup, arrayElement);
                 encounter.addObs(obsGroup);
             }
-        } else if (o instanceof JSONObject) {
-            processObs(encounter, parentObs, o);
+        } else if (childObsObject instanceof JSONObject) {
+            processObs(encounter, parentObs, childObsObject);
+            encounter.addObs(parentObs);
+        }else if (childObsObject instanceof LinkedHashMap) {
+            processObs(encounter, parentObs, childObsObject);
             encounter.addObs(parentObs);
         }
     }
