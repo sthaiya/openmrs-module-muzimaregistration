@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * TODO: Write brief description about the class here.
@@ -186,7 +187,7 @@ public class JsonUtils {
     public static Object readAsObject(final String jsonObject, final String path) {
         Object object = null;
         try {
-            object = JsonPath.read(jsonObject, path);
+            object = new JSONObject((Map<String,?>)JsonPath.read(jsonObject, path));
         } catch (Exception e) {
             logger.error("Unable to read object value with path: " + path + " from: " + String.valueOf(jsonObject));
         }
