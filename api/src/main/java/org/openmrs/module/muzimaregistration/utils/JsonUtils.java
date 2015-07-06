@@ -60,7 +60,8 @@ public class JsonUtils {
     public static boolean readAsBoolean(final String jsonObject, final String path) {
         boolean returnedBoolean = false;
         try {
-            returnedBoolean = (Boolean)JsonPath.read(jsonObject, path);
+            String value = readAsString(jsonObject, path);
+            returnedBoolean = Boolean.valueOf(value);
         } catch (Exception e) {
             logger.error("Unable to read boolean value with path: " + path + " from: " + String.valueOf(jsonObject));
         }
@@ -187,7 +188,7 @@ public class JsonUtils {
     public static Object readAsObject(final String jsonObject, final String path) {
         Object object = null;
         try {
-            object = new JSONObject((Map<String,?>)JsonPath.read(jsonObject, path));
+            object = JsonPath.read(jsonObject, path);
         } catch (Exception e) {
             logger.error("Unable to read object value with path: " + path + " from: " + String.valueOf(jsonObject));
         }

@@ -183,11 +183,17 @@ public class HtmlRegistrationQueueDataHandler implements QueueDataHandler {
     }
 
     private void setIdentifierTypeLocation(final Set<PatientIdentifier> patientIdentifiers) {
-        String locationIdString = JsonUtils.readAsString(payload, "$[encounter]['encounter.location_id']");
-        int locationId = Integer.parseInt(locationIdString);
-        Location location = Context.getLocationService().getLocation(locationId);
+        String locationIdString = JsonUtils.readAsString(payload, "$['encounter']['encounter.location_id']");
+        Location location = null;
+        int locationId;
+
+        if(locationIdString != null){
+            locationId = Integer.parseInt(locationIdString);
+            location = Context.getLocationService().getLocation(locationId);
+        }
+        
         if (location == null) {
-            queueProcessorException.addException(new Exception("Unable to find encounter location using the id: " + locationId));
+            queueProcessorException.addException(new Exception("Unable to find encounter location using the id: " + locationIdString));
         } else {
             Iterator<PatientIdentifier> iterator = patientIdentifiers.iterator();
             while (iterator.hasNext()) {

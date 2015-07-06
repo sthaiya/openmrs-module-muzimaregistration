@@ -61,7 +61,7 @@ public class JsonEncounterQueueDataHandler implements QueueDataHandler {
 
     private static final String DISCRIMINATOR_VALUE = "json-encounter";
 
-    private static final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    private static final DateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
 
     private final Log log = LogFactory.getLog(JsonEncounterQueueDataHandler.class);
 
@@ -140,7 +140,7 @@ public class JsonEncounterQueueDataHandler implements QueueDataHandler {
         patientIdentifier.setIdentifier(identifier);
         unsavedPatient.addIdentifier(patientIdentifier);
 
-        Date birthdate = JsonUtils.readAsDate(patientPayload, "$['patient']['patient.birthdate']");
+        Date birthdate = JsonUtils.readAsDate(patientPayload, "$['patient']['patient.birth_date']");
         boolean birthdateEstimated = JsonUtils.readAsBoolean(patientPayload, "$['patient']['patient.birthdate_estimated']");
         String gender = JsonUtils.readAsString(patientPayload, "$['patient']['patient.sex']");
 
@@ -229,7 +229,7 @@ public class JsonEncounterQueueDataHandler implements QueueDataHandler {
                 if (concept.isSet()) {
                     Obs obsGroup = new Obs();
                     obsGroup.setConcept(concept);
-                    Object childObsObject = new JSONObject((Map<String,?>)obsJsonObject.get(conceptQuestion));
+                    Object childObsObject = obsJsonObject.get(conceptQuestion);
                     processObsObject(encounter, obsGroup, childObsObject);
                     if (parentObs != null) {
                         parentObs.addGroupMember(obsGroup);
@@ -246,6 +246,9 @@ public class JsonEncounterQueueDataHandler implements QueueDataHandler {
                     }
                 }
             }
+        }else if(obsObject instanceof LinkedHashMap){
+            Object obsAsJsonObject = new JSONObject((Map<String,?>)obsObject);
+            processObs(encounter, parentObs, obsAsJsonObject);
         }
     }
 
@@ -293,7 +296,8 @@ public class JsonEncounterQueueDataHandler implements QueueDataHandler {
             processObs(encounter, parentObs, childObsObject);
             encounter.addObs(parentObs);
         }else if (childObsObject instanceof LinkedHashMap) {
-            processObs(encounter, parentObs, childObsObject);
+            Object childObsAsJsonObject = new JSONObject((Map<String,?>)childObsObject);
+            processObs(encounter, parentObs, childObsAsJsonObject);
             encounter.addObs(parentObs);
         }
     }
