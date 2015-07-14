@@ -226,23 +226,27 @@ public class JsonEncounterQueueDataHandler implements QueueDataHandler {
                     continue;
                 int conceptId = Integer.parseInt(conceptElements[0]);
                 Concept concept = Context.getConceptService().getConcept(conceptId);
-                if (concept.isSet()) {
-                    Obs obsGroup = new Obs();
-                    obsGroup.setConcept(concept);
-                    Object childObsObject = obsJsonObject.get(conceptQuestion);
-                    processObsObject(encounter, obsGroup, childObsObject);
-                    if (parentObs != null) {
-                        parentObs.addGroupMember(obsGroup);
-                    }
+                if (concept == null) {
+                    queueProcessorException.addException(new Exception("Unable to find Concept for Question with ID: " + conceptId));
                 } else {
-                    Object valueObject = obsJsonObject.get(conceptQuestion);
-                    if (valueObject instanceof JSONArray) {
-                        JSONArray jsonArray = (JSONArray) valueObject;
-                        for (Object arrayElement : jsonArray) {
-                            createObs(encounter, parentObs, concept, arrayElement);
+                    if (concept.isSet()) {
+                        Obs obsGroup = new Obs();
+                        obsGroup.setConcept(concept);
+                        Object childObsObject = obsJsonObject.get(conceptQuestion);
+                        processObsObject(encounter, obsGroup, childObsObject);
+                        if (parentObs != null) {
+                            parentObs.addGroupMember(obsGroup);
                         }
                     } else {
-                        createObs(encounter, parentObs, concept, valueObject);
+                        Object valueObject = obsJsonObject.get(conceptQuestion);
+                        if (valueObject instanceof JSONArray) {
+                            JSONArray jsonArray = (JSONArray) valueObject;
+                            for (Object arrayElement : jsonArray) {
+                                createObs(encounter, parentObs, concept, arrayElement);
+                            }
+                        } else {
+                            createObs(encounter, parentObs, concept, valueObject);
+                        }
                     }
                 }
             }
@@ -253,9 +257,24 @@ public class JsonEncounterQueueDataHandler implements QueueDataHandler {
     }
 
     private void createObs(final Encounter encounter, final Obs parentObs, final Concept concept, final Object o) {
-        String value = o.toString();
+        String value=null;
         Obs obs = new Obs();
         obs.setConcept(concept);
+
+        //check and parse if obs_value / obs_datetime object
+        if(o instanceof LinkedHashMap){
+            LinkedHashMap obj = (LinkedHashMap)o;
+            if(obj.containsKey("obs_value")){
+                value = (String)obj.get("obs_value");
+            }
+            if(obj.containsKey("obs_datetime")){
+                String dateString = (String)obj.get("obs_datetime");
+                Date obsDateTime = parseDate(dateString);
+                obs.setObsDatetime(obsDateTime);
+            }
+        }else{
+            value = o.toString();
+        }
         // find the obs value :)
         if (concept.getDatatype().isNumeric()) {
             obs.setValueNumeric(Double.parseDouble(value));
