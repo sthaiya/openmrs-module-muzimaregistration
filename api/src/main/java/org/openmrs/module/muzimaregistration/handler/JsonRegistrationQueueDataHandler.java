@@ -24,7 +24,6 @@ import org.openmrs.PatientIdentifier;
 import org.openmrs.PatientIdentifierType;
 import org.openmrs.PersonName;
 import org.openmrs.annotation.Handler;
-import org.openmrs.api.PatientService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.muzima.exception.QueueProcessorException;
 import org.openmrs.module.muzima.model.QueueData;
@@ -45,13 +44,13 @@ import java.util.Set;
  * TODO: Write brief description about the class here.
  */
 @Handler(supports = QueueData.class, order = 1)
-public class HtmlRegistrationQueueDataHandler implements QueueDataHandler {
+public class JsonRegistrationQueueDataHandler implements QueueDataHandler {
 
-    private static final String DISCRIMINATOR_VALUE = "html-registration";
+    private static final String DISCRIMINATOR_VALUE = "json-registration";
 
     private static final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
-    private final Log log = LogFactory.getLog(HtmlRegistrationQueueDataHandler.class);
+    private final Log log = LogFactory.getLog(JsonRegistrationQueueDataHandler.class);
 
     private Patient unsavedPatient;
     private String payload;
