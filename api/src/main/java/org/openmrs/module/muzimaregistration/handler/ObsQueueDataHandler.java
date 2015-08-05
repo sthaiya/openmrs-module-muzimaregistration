@@ -28,7 +28,7 @@ import org.springframework.stereotype.Component;
 @Handler(supports = QueueData.class, order = 3)
 public class ObsQueueDataHandler implements QueueDataHandler {
 
-    public static final String DISCRIMINATOR_VALUE = "obs";
+    public static final String DISCRIMINATOR_VALUE = "json-individual-obs";
 
     private final Log log = LogFactory.getLog(ObsQueueDataHandler.class);
 
@@ -45,5 +45,10 @@ public class ObsQueueDataHandler implements QueueDataHandler {
     @Override
     public boolean validate(QueueData queueData) {
         return false;
+    }
+
+    @Override
+    public String getDiscriminator() {
+        return DISCRIMINATOR_VALUE;
     }
 }

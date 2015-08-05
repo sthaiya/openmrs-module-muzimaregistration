@@ -97,6 +97,11 @@ public class JsonRegistrationQueueDataHandler implements QueueDataHandler {
         }
     }
 
+    @Override
+    public String getDiscriminator() {
+        return DISCRIMINATOR_VALUE;
+    }
+
     private void validateUnsavedPatient() {
         Patient savedPatient = findSimilarSavedPatient();
         if (savedPatient != null) {

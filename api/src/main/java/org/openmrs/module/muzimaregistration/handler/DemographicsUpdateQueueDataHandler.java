@@ -86,6 +86,11 @@ public class DemographicsUpdateQueueDataHandler implements QueueDataHandler {
         }
     }
 
+    @Override
+    public String getDiscriminator() {
+        return DISCRIMINATOR_VALUE;
+    }
+
     private void processPatient(final Object patientObject) throws QueueProcessorException {
         String patientPayload = patientObject.toString();
         String uuid = JsonUtils.readAsString(patientPayload, "$['patient.uuid']");

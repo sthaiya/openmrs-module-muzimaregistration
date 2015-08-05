@@ -131,6 +131,11 @@ public class XmlEncounterQueueDataHandler implements QueueDataHandler {
         }
     }
 
+    @Override
+    public String getDiscriminator() {
+        return DISCRIMINATOR_VALUE;
+    }
+
     private void processPatient(final Encounter encounter, final NodeList patientNodeList) throws QueueProcessorException {
         Node patientNode = patientNodeList.item(0);
         NodeList patientElementNodes = patientNode.getChildNodes();
