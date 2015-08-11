@@ -99,6 +99,11 @@ public class JsonEncounterQueueDataHandler implements QueueDataHandler {
     }
 
     @Override
+    public String getDiscriminator() {
+        return DISCRIMINATOR_VALUE;
+    }
+
+    @Override
     public void process(final QueueData queueData) throws QueueProcessorException {
 
         try {

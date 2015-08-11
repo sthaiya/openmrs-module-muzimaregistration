@@ -166,6 +166,11 @@ public class XmlRegistrationQueueDataHandler implements QueueDataHandler {
         }
     }
 
+    @Override
+    public String getDiscriminator() {
+        return DISCRIMINATOR_VALUE;
+    }
+
     /**
      * Flag whether the current queue data handler can handle the queue data.
      *
