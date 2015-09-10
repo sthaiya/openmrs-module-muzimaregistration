@@ -21,6 +21,7 @@ import org.openmrs.api.context.Context;
 import org.openmrs.module.muzima.web.controller.MuzimaRestController;
 import org.openmrs.module.muzimaregistration.api.RegistrationDataService;
 import org.openmrs.module.muzimaregistration.api.model.RegistrationData;
+import org.openmrs.module.muzimaregistration.web.wrapper.FakePatient;
 import org.openmrs.module.webservices.rest.web.RequestContext;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.annotation.PropertyGetter;
@@ -42,7 +43,7 @@ import java.util.Set;
 @Resource(name = RestConstants.VERSION_1 + MuzimaRestController.MUZIMA_NAMESPACE + "/registration",
         supportedClass = Patient.class,
         supportedOpenmrsVersions = {"1.8.*", "1.9.*"})
-public class RegistrationResource extends DataDelegatingCrudResource<Patient> {
+public class RegistrationResource extends DataDelegatingCrudResource<FakePatient> {
     /**
      * Gets the delegate object with the given unique id. Implementations may decide whether
      * "unique id" means a uuid, or if they also want to retrieve delegates based on a unique
@@ -52,12 +53,13 @@ public class RegistrationResource extends DataDelegatingCrudResource<Patient> {
      * @return the delegate for the given uniqueId
      */
     @Override
-    public Patient getByUniqueId(final String uniqueId) {
+    public FakePatient getByUniqueId(final String uniqueId) {
         PatientService patientService = Context.getPatientService();
         RegistrationDataService registrationService = Context.getService(RegistrationDataService.class);
 
         RegistrationData registrationData = registrationService.getRegistrationDataByTemporaryUuid(uniqueId);
-        return patientService.getPatientByUuid(registrationData.getAssignedUuid());
+        Patient patient = patientService.getPatientByUuid(registrationData.getAssignedUuid());
+        return new FakePatient(patient);
     }
 
     /**
@@ -72,7 +74,7 @@ public class RegistrationResource extends DataDelegatingCrudResource<Patient> {
      *
      */
     @Override
-    protected void delete(final Patient delegate, final String reason, final RequestContext context) throws ResponseException {
+    protected void delete(final FakePatient delegate, final String reason, final RequestContext context) throws ResponseException {
         throw new ResourceDoesNotSupportOperationException("Deleting patient using this resource is not supported.");
     }
 
@@ -86,7 +88,7 @@ public class RegistrationResource extends DataDelegatingCrudResource<Patient> {
      *
      */
     @Override
-    public void purge(final Patient delegate, final RequestContext context) throws ResponseException {
+    public void purge(final FakePatient delegate, final RequestContext context) throws ResponseException {
         throw new ResourceDoesNotSupportOperationException("Purging patient using this resource is not supported.");
     }
 
@@ -96,7 +98,7 @@ public class RegistrationResource extends DataDelegatingCrudResource<Patient> {
      * @return
      */
     @Override
-    public Patient newDelegate() {
+    public FakePatient newDelegate() {
         throw new ResourceDoesNotSupportOperationException("Purging patient using this resource is not supported.");
     }
 
@@ -106,7 +108,7 @@ public class RegistrationResource extends DataDelegatingCrudResource<Patient> {
      * @return the saved instance
      */
     @Override
-    public Patient save(final Patient delegate) {
+    public FakePatient save(final FakePatient delegate) {
         throw new ResourceDoesNotSupportOperationException("Saving patient using this resource is not supported.");
     }
 
