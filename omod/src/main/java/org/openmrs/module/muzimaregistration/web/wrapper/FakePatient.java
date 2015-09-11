@@ -26,14 +26,20 @@ public class FakePatient extends Patient {
             "uuid", "gender", "birthdate", "names", "identifier", "attributes"
     };
 
-    public FakePatient(final Patient patient) {
+    private FakePatient() {
+    }
+
+    public static FakePatient copyPatient(final Patient patient) {
+        FakePatient fakePatient = new FakePatient();
         for (String property : properties) {
             try {
                 Object o = PropertyUtils.getProperty(patient, property);
-                PropertyUtils.setProperty(this, property, o);
+                PropertyUtils.setProperty(fakePatient, property, o);
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
             }
         }
+        fakePatient.setVoided(patient.getVoided());
+        return fakePatient;
     }
 }

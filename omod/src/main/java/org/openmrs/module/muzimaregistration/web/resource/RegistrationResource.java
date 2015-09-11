@@ -59,7 +59,7 @@ public class RegistrationResource extends DataDelegatingCrudResource<FakePatient
 
         RegistrationData registrationData = registrationService.getRegistrationDataByTemporaryUuid(uniqueId);
         Patient patient = patientService.getPatientByUuid(registrationData.getAssignedUuid());
-        return new FakePatient(patient);
+        return FakePatient.copyPatient(patient);
     }
 
     /**
