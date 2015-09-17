@@ -124,7 +124,6 @@ public class RegistrationResource extends DataDelegatingCrudResource<FakePatient
         if (rep instanceof DefaultRepresentation) {
             DelegatingResourceDescription description = new DelegatingResourceDescription();
             description.addProperty("uuid");
-            description.addProperty("display", findMethod("getDisplayString"));
             description.addProperty("identifiers", Representation.REF);
             description.addProperty("person", Representation.DEFAULT);
             description.addProperty("voided");
@@ -134,7 +133,6 @@ public class RegistrationResource extends DataDelegatingCrudResource<FakePatient
         } else if (rep instanceof FullRepresentation) {
             DelegatingResourceDescription description = new DelegatingResourceDescription();
             description.addProperty("uuid");
-            description.addProperty("display", findMethod("getDisplayString"));
             description.addProperty("identifiers", Representation.DEFAULT);
             description.addProperty("person", Representation.FULL);
             description.addProperty("voided");
@@ -145,24 +143,13 @@ public class RegistrationResource extends DataDelegatingCrudResource<FakePatient
         return null;
     }
 
-    /**
-     * @param patient
-     * @return identifier + name (for concise display purposes)
-     */
-    public String getDisplayString(Patient patient) {
-        if (patient.getPatientIdentifier() == null)
-            return "";
-
-        return patient.getPatientIdentifier().getIdentifier() + " - " + patient.getPersonName().getFullName();
-    }
-
     @PropertyGetter("person")
-    public static Person getPerson(Patient instance) {
+    public static Person getPerson(FakePatient instance) {
         return new Person(instance); //Must be a Person instead of Patient to prevent infinite recursion RESTWS-273
     }
 
     @PropertyGetter("identifiers")
-    public static Set<PatientIdentifier> getIdentifiers(Patient instance) {
+    public static Set<PatientIdentifier> getIdentifiers(FakePatient instance) {
         return new LinkedHashSet<PatientIdentifier>(instance.getActiveIdentifiers());
     }
 }
