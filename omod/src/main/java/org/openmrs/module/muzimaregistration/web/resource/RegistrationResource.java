@@ -142,14 +142,4 @@ public class RegistrationResource extends DataDelegatingCrudResource<FakePatient
         }
         return null;
     }
-
-    @PropertyGetter("person")
-    public static Person getPerson(FakePatient instance) {
-        return new Person(instance); //Must be a Person instead of Patient to prevent infinite recursion RESTWS-273
-    }
-
-    @PropertyGetter("identifiers")
-    public static Set<PatientIdentifier> getIdentifiers(FakePatient instance) {
-        return new LinkedHashSet<PatientIdentifier>(instance.getActiveIdentifiers());
-    }
 }
