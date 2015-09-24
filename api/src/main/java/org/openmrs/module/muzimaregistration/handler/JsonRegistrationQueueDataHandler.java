@@ -22,8 +22,13 @@ import org.openmrs.Location;
 import org.openmrs.Patient;
 import org.openmrs.PatientIdentifier;
 import org.openmrs.PatientIdentifierType;
+import org.openmrs.Person;
+import org.openmrs.PersonAddress;
+import org.openmrs.PersonAttribute;
+import org.openmrs.PersonAttributeType;
 import org.openmrs.PersonName;
 import org.openmrs.annotation.Handler;
+import org.openmrs.api.PersonService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.muzima.exception.QueueProcessorException;
 import org.openmrs.module.muzima.model.QueueData;
@@ -39,6 +44,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * TODO: Write brief description about the class here.
@@ -105,11 +111,14 @@ public class JsonRegistrationQueueDataHandler implements QueueDataHandler {
     private void validateUnsavedPatient() {
         Patient savedPatient = findSimilarSavedPatient();
         if (savedPatient != null) {
-            queueProcessorException.addException(new Exception("Found a patient with similar characteristic :  patientId = " + savedPatient.getPatientId()
-                    + " Identifier Id = " + savedPatient.getPatientIdentifier().getIdentifier()));
+            queueProcessorException.addException(
+                    new Exception(
+                            "Found a patient with similar characteristic :  patientId = " + savedPatient.getPatientId()
+                                    + " Identifier Id = " + savedPatient.getPatientIdentifier().getIdentifier()
+                    )
+            );
         }
     }
-
 
     private void populateUnsavedPatientFromPayload() {
         setPatientIdentifiersFromPayload();
@@ -117,6 +126,8 @@ public class JsonRegistrationQueueDataHandler implements QueueDataHandler {
         setPatientBirthDateEstimatedFromPayload();
         setPatientGenderFromPayload();
         setPatientNameFromPayload();
+        setPatientAddressesFromPayload();
+        setPersonAttributesFromPayload();
     }
 
     private void setPatientIdentifiersFromPayload() {
@@ -148,14 +159,15 @@ public class JsonRegistrationQueueDataHandler implements QueueDataHandler {
 
     private List<PatientIdentifier> getOtherPatientIdentifiersFromPayload() {
         List<PatientIdentifier> otherIdentifiers = new ArrayList<PatientIdentifier>();
-        Object identifierTypeNameObject = JsonUtils.readAsObject(payload,"$['observation']['other_identifier_type']");
-        Object identifierValueObject =JsonUtils.readAsObject(payload,"$['observation']['other_identifier_value']");
+        Object identifierTypeNameObject = JsonUtils.readAsObject(payload, "$['observation']['other_identifier_type']");
+        Object identifierValueObject =JsonUtils.readAsObject(payload, "$['observation']['other_identifier_value']");
 
         if (identifierTypeNameObject instanceof JSONArray) {
             JSONArray identifierTypeName = (JSONArray) identifierTypeNameObject;
             JSONArray identifierValue = (JSONArray) identifierValueObject;
             for (int i = 0; i < identifierTypeName.size(); i++) {
-                PatientIdentifier identifier = createPatientIdentifier(identifierTypeName.get(i).toString(), identifierValue.get(i).toString());
+                PatientIdentifier identifier = createPatientIdentifier(identifierTypeName.get(i).toString(),
+                        identifierValue.get(i).toString());
                 if (identifier != null) {
                     otherIdentifiers.add(identifier);
                 }
@@ -172,11 +184,14 @@ public class JsonRegistrationQueueDataHandler implements QueueDataHandler {
     }
 
     private PatientIdentifier createPatientIdentifier(String identifierTypeName, String identifierValue) {
-        PatientIdentifierType identifierType = Context.getPatientService().getPatientIdentifierTypeByName(identifierTypeName);
+        PatientIdentifierType identifierType = Context.getPatientService()
+                .getPatientIdentifierTypeByName(identifierTypeName);
         if (identifierType == null) {
-            queueProcessorException.addException(new Exception("Unable to find identifier type with name: " + identifierTypeName));
+            queueProcessorException.addException(
+                    new Exception("Unable to find identifier type with name: " + identifierTypeName));
         } else if (identifierValue == null) {
-            queueProcessorException.addException(new Exception("Identifier value can't be null type: " + identifierTypeName));
+            queueProcessorException.addException(
+                    new Exception("Identifier value can't be null type: " + identifierTypeName));
         } else {
             PatientIdentifier patientIdentifier = new PatientIdentifier();
             patientIdentifier.setIdentifierType(identifierType);
@@ -197,7 +212,8 @@ public class JsonRegistrationQueueDataHandler implements QueueDataHandler {
         }
         
         if (location == null) {
-            queueProcessorException.addException(new Exception("Unable to find encounter location using the id: " + locationIdString));
+            queueProcessorException.addException(
+                    new Exception("Unable to find encounter location using the id: " + locationIdString));
         } else {
             Iterator<PatientIdentifier> iterator = patientIdentifiers.iterator();
             while (iterator.hasNext()) {
@@ -255,6 +271,59 @@ public class JsonRegistrationQueueDataHandler implements QueueDataHandler {
 
     private String getPatientUuidFromPayload(){
         return JsonUtils.readAsString(payload, "$['patient']['patient.uuid']");
+    }
+
+    private void setPatientAddressesFromPayload(){
+        PersonAddress patientAddress = new PersonAddress();
+
+        String county = JsonUtils.readAsString(payload, "$['patient']['patient.county']");
+        patientAddress.setStateProvince(county);
+
+        String location = JsonUtils.readAsString(payload, "$['patient']['patient.location']");
+        patientAddress.setAddress6(location);
+
+        String sub_location = JsonUtils.readAsString(payload, "$['patient']['patient.sub_location']");
+        patientAddress.setAddress5(sub_location);
+
+        String village = JsonUtils.readAsString(payload, "$['patient']['patient.village']");
+        patientAddress.setCityVillage(village);
+
+        Set<PersonAddress> addresses = new TreeSet<PersonAddress>();
+        addresses.add(patientAddress);
+        unsavedPatient.setAddresses(addresses);
+    }
+
+    private void setPersonAttributesFromPayload(){
+        Set<PersonAttribute> attributes = new TreeSet<PersonAttribute>();
+        PersonService personService = Context.getPersonService();
+
+        String mothersName = JsonUtils.readAsString(payload, "$['patient']['patient.mothers_name']");
+        PersonAttributeType mothersNameAttributeType = personService.getPersonAttributeTypeByName("Mother's Name");
+        if(mothersNameAttributeType != null && mothersName != null) {
+            PersonAttribute mothersNamePersonAttribute = new PersonAttribute();
+            mothersNamePersonAttribute.setAttributeType(mothersNameAttributeType);
+            mothersNamePersonAttribute.setValue(mothersName);
+            attributes.add(mothersNamePersonAttribute);
+        } else if(mothersNameAttributeType ==null){
+            queueProcessorException.addException(
+                    new Exception("Unable to find Person Attribute type by name 'Mother's Name'")
+            );
+        }
+
+        PersonAttributeType phoneNumberAttributeType = personService.getPersonAttributeTypeByName("Contact Phone Number");
+        String phoneNumber = JsonUtils.readAsString(payload, "$['patient']['patient.phone_number']");
+        if(phoneNumberAttributeType !=null && phoneNumber != null) {
+            PersonAttribute phoneNumberPersonAttribute = new PersonAttribute();
+            phoneNumberPersonAttribute.setAttributeType(phoneNumberAttributeType);
+            phoneNumberPersonAttribute.setValue(phoneNumber);
+            attributes.add(phoneNumberPersonAttribute);
+        } else if(phoneNumberAttributeType ==null){
+            queueProcessorException.addException(
+                    new Exception("Unable to find Person Attribute type by name 'Contact Phone Number'")
+            );
+        }
+
+        unsavedPatient.setAttributes(attributes);
     }
 
     private Patient findSimilarSavedPatient() {
