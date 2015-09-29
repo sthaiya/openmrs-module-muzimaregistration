@@ -60,6 +60,7 @@ public class JsonRegistrationQueueDataHandler implements QueueDataHandler {
 
     private Patient unsavedPatient;
     private String payload;
+    Set<PersonAttribute> personAttributes;
     private QueueProcessorException queueProcessorException;
 
     @Override
@@ -294,36 +295,29 @@ public class JsonRegistrationQueueDataHandler implements QueueDataHandler {
     }
 
     private void setPersonAttributesFromPayload(){
-        Set<PersonAttribute> attributes = new TreeSet<PersonAttribute>();
+        personAttributes = new TreeSet<PersonAttribute>();
         PersonService personService = Context.getPersonService();
 
         String mothersName = JsonUtils.readAsString(payload, "$['patient']['patient.mothers_name']");
-        PersonAttributeType mothersNameAttributeType = personService.getPersonAttributeTypeByName("Mother's Name");
-        if(mothersNameAttributeType != null && mothersName != null) {
-            PersonAttribute mothersNamePersonAttribute = new PersonAttribute();
-            mothersNamePersonAttribute.setAttributeType(mothersNameAttributeType);
-            mothersNamePersonAttribute.setValue(mothersName);
-            attributes.add(mothersNamePersonAttribute);
-        } else if(mothersNameAttributeType ==null){
-            queueProcessorException.addException(
-                    new Exception("Unable to find Person Attribute type by name 'Mother's Name'")
-            );
-        }
+        setAsAttribute("Mother's Name",mothersName);
 
-        PersonAttributeType phoneNumberAttributeType = personService.getPersonAttributeTypeByName("Contact Phone Number");
         String phoneNumber = JsonUtils.readAsString(payload, "$['patient']['patient.phone_number']");
-        if(phoneNumberAttributeType !=null && phoneNumber != null) {
-            PersonAttribute phoneNumberPersonAttribute = new PersonAttribute();
-            phoneNumberPersonAttribute.setAttributeType(phoneNumberAttributeType);
-            phoneNumberPersonAttribute.setValue(phoneNumber);
-            attributes.add(phoneNumberPersonAttribute);
-        } else if(phoneNumberAttributeType ==null){
+        setAsAttribute("Contact Phone Number",phoneNumber);
+
+        unsavedPatient.setAttributes(personAttributes);
+    }
+
+    private void setAsAttribute(String attributeTypeName, String value){
+        PersonService personService = Context.getPersonService();
+        PersonAttributeType attributeType = personService.getPersonAttributeTypeByName(attributeTypeName);
+        if(attributeType !=null && value != null){
+            PersonAttribute personAttribute = new PersonAttribute(attributeType, value);
+            personAttributes.add(personAttribute);
+        } else if(attributeType ==null){
             queueProcessorException.addException(
-                    new Exception("Unable to find Person Attribute type by name 'Contact Phone Number'")
+                    new Exception("Unable to find Person Attribute type by name '" + attributeTypeName + "'")
             );
         }
-
-        unsavedPatient.setAttributes(attributes);
     }
 
     private Patient findSimilarSavedPatient() {
