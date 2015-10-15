@@ -5,14 +5,14 @@
 
     <groupId>org.openmrs.module</groupId>
     <artifactId>muzimaregistration</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Muzima Registration Module</name>
     <description>
         Muzima module which will provide default implementation of form processors to process registration and
         encounter form.
     </description>
-    <url>https://wiki.openmrs.org/display/docs/Muzima+Default+Form+Processors+Module+Module</url>
+    <url>https://github.com/muzima/documentation/wiki/Form-Processing-Mechanism</url>
 
     <developers>
         <developer>
@@ -26,10 +26,11 @@
     </organization>
 
     <scm>
-        <connection>scm:svn:https:/github.com/muzima/muzimaregistration/</connection>
-        <developerConnection>scm:svn:https:/github.com/muzima/muzimaregistration/</developerConnection>
-        <url>https:/github.com/muzima/muzimaregistration/</url>
-    </scm>
+        <connection>scm:git:https://github.com/muzima/openmrs-module-muzimaregistration/</connection>
+        <developerConnection>scm:git:https://github.com/muzima/openmrs-module-muzimaregistration</developerConnection>
+        <url>https://github.com/muzima/openmrs-module-muzimaregistration</url>
+    <tag>HEAD</tag>
+  </scm>
 
     <modules>
         <module>api</module>
@@ -37,9 +38,10 @@
     </modules>
 
     <properties>
+        <muzimaVersion>1.0.1-SNAPSHOT</muzimaVersion>
+        <muzimaFormsVersion>1.0.1-SNAPSHOT</muzimaFormsVersion>
         <openMRSVersion>1.8.2</openMRSVersion>
         <webservicesRestVersion>2.1</webservicesRestVersion>
-        <muzimaVersion>1.0.0</muzimaVersion>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -67,6 +69,14 @@
                 <groupId>org.openmrs.module</groupId>
                 <artifactId>webservices.rest-omod</artifactId>
                 <version>${webservicesRestVersion}</version>
+                <type>jar</type>
+                <scope>provided</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.openmrs.module</groupId>
+                <artifactId>muzimaforms-omod</artifactId>
+                <version>${muzimaFormsVersion}</version>
                 <type>jar</type>
                 <scope>provided</scope>
             </dependency>
@@ -158,6 +168,41 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <plugin>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>2.7</version>
+                <configuration>
+                    <altDeploymentRepository>internal.repo::default::file://${project.build.directory}/mvn-repo
+                    </altDeploymentRepository>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.github.github</groupId>
+                <artifactId>site-maven-plugin</artifactId>
+                <version>0.11</version>
+                <configuration>
+                    <message>Maven artifacts for ${project.artifactId} ${project.version}</message>
+                    <noJekyll>true</noJekyll>
+                    <outputDirectory>${project.build.directory}/mvn-repo</outputDirectory>
+                    <branch>refs/heads/openmrs-module-muzima</branch>
+                    <includes>
+                        <include>**/*</include>
+                    </includes>
+                    <merge>true</merge>
+                    <repositoryName>muzima-maven</repositoryName>
+                    <repositoryOwner>muzima</repositoryOwner>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>site</goal>
+                        </goals>
+                        <phase>deploy</phase>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
 
     <repositories>

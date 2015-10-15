@@ -52,10 +52,10 @@ import static org.mockito.Mockito.when;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(Context.class)
-public class RegistrationQueueDataHandlerTest  {
+public class XmlRegistrationQueueDataHandlerTest {
     /**
      * @verifies create new patient from well formed registration data
-     * @see RegistrationQueueDataHandler#process(org.openmrs.module.muzima.model.QueueData)
+     * @see XmlRegistrationQueueDataHandler#process(org.openmrs.module.muzima.model.QueueData)
      */
     @Test
     public void process_shouldCreateNewPatientFromWellFormedRegistrationData() throws Exception {
@@ -76,16 +76,16 @@ public class RegistrationQueueDataHandlerTest  {
         when(patientService.getPatients(anyString())).thenReturn(Arrays.asList(patient1, patient2, patient3));
 
         final String registrationFormData = getPayloadFromFile();
-        Object payload = JsonUtils.readAsObject(registrationFormData, "$['payload']");
-        String temporaryUuid = getValueFromJSON(String.valueOf(payload), "patient.uuid");
+        //Object payload = JsonUtils.readAsObject(registrationFormData, "$['payload']");
+        String temporaryUuid = getValueFromJSON(String.valueOf(registrationFormData), "patient.uuid");
 
-        RegistrationQueueDataHandler registrationQueueDataHandler = new RegistrationQueueDataHandler();
+        XmlRegistrationQueueDataHandler xmlRegistrationQueueDataHandler = new XmlRegistrationQueueDataHandler();
 
         final QueueData queueData = new QueueData();
-        queueData.setPayload(String.valueOf(payload));
-        registrationQueueDataHandler.process(queueData);
+        queueData.setPayload(String.valueOf(registrationFormData));
+        xmlRegistrationQueueDataHandler.process(queueData);
 
-        String identifier = getValueFromJSON(String.valueOf(payload), "patient.medical_record_number");
+        String identifier = getValueFromJSON(String.valueOf(registrationFormData), "patient.medical_record_number");
 
         verify(patientService).getPatientIdentifierType(anyInt());
         verify(patientService).getPatients(identifier);
@@ -113,7 +113,7 @@ public class RegistrationQueueDataHandlerTest  {
 
     /**
      * @verifies skip already processed registration data
-     * @see RegistrationQueueDataHandler#process(org.openmrs.module.muzima.model.QueueData)
+     * @see XmlRegistrationQueueDataHandler#process(org.openmrs.module.muzima.model.QueueData)
      */
     @Test
     public void process_shouldSkipAlreadyProcessedRegistrationData() throws Exception {
@@ -148,7 +148,7 @@ public class RegistrationQueueDataHandlerTest  {
     }
 
     private String getValueFromJSON(final String payload, final String name) {
-        return  JsonUtils.readAsString(payload, "$['" + name + "']");
+        return  JsonUtils.readAsString(payload, "$.payload['" + name + "']");
     }
 
 

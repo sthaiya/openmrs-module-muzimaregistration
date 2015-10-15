@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * TODO: Write brief description about the class here.
@@ -32,7 +33,7 @@ public class JsonUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(JsonUtils.class.getSimpleName());
 
-    private static final String DATE_PATTERN = "yyyy-MM-dd";
+    private static final String DATE_PATTERN = "dd-MM-yyyy";
 
     /**
      * Write boolean value into the json object. The method will only write the boolean value if the object passed
@@ -59,7 +60,8 @@ public class JsonUtils {
     public static boolean readAsBoolean(final String jsonObject, final String path) {
         boolean returnedBoolean = false;
         try {
-            returnedBoolean = (Boolean)JsonPath.read(jsonObject, path);
+            String value = readAsString(jsonObject, path);
+            returnedBoolean = Boolean.valueOf(value);
         } catch (Exception e) {
             logger.error("Unable to read boolean value with path: " + path + " from: " + String.valueOf(jsonObject));
         }
@@ -241,6 +243,8 @@ public class JsonUtils {
             return null;
         }
         try {
+            if(dateAsString.contains("/"))
+                return new SimpleDateFormat(DATE_PATTERN).parse(dateAsString.replace("/","-"));
             return new SimpleDateFormat(DATE_PATTERN).parse(dateAsString);
         } catch (ParseException e) {
             logger.error("Unable to convert string value from path: " + path + " from: " + String.valueOf(serialized));
